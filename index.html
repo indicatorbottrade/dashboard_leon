@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Task Dashboard</title>
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Vue 3 -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <!-- FontAwesome -->
+  <script src="https://kit.fontawesome.com/a2e0e9f6d5.js" crossorigin="anonymous"></script>
+</head>
+<body class="bg-gray-50">
+  <div id="app">
+    <div class="flex min-h-screen">
+      <!-- Sidebar -->
+      <aside class="hidden md:flex flex-col w-64 bg-white shadow-lg p-4">
+        <h2 class="text-xl font-bold mb-6">Dashboard</h2>
+        <nav class="space-y-3">
+          <a href="#" class="block text-gray-700 hover:text-blue-500">Leon_CG_v2</a>
+          <!-- <a href="#" class="block text-gray-700 hover:text-blue-500">Employees</a> -->
+          <!-- <a href="#" class="block text-gray-700 hover:text-blue-500">Tasks</a> -->
+          <a href="#" class="block text-gray-700 hover:text-blue-500">Settings</a>
+        </nav>
+      </aside>
+
+      <!-- Main -->
+      <main class="flex-1 p-4 md:p-6">
+        <!-- Header (mobile only) -->
+        <div class="flex items-center md:hidden mb-4">
+          <button class="p-2 rounded-lg bg-gray-100 mr-2">
+            <i class="fas fa-bars"></i>
+          </button>
+          <h1 class="text-lg font-bold">Task Management</h1>
+        </div>
+
+        <!-- Title -->
+        <h2 class="text-2xl font-bold mb-2">Leon_CG_v2</h2>
+        <p class="text-gray-500 mb-6">EA trade các cập tiền(Chiến lược Asian Kill Zone).</p>
+
+        <!-- Cards -->
+        <div class="grid grid-cols-3 md:grid-cols-5 gap-4 mb-6">
+          <div class="bg-blue-500 text-white p-4 rounded-xl text-center">
+            <p class="text-2xl font-bold">11</p>
+            <p class="text-sm">Tổng</p>
+          </div>
+          <div class="bg-green-500 text-white p-4 rounded-xl text-center">
+            <p class="text-2xl font-bold">5</p>
+            <p class="text-sm">Còn hạn</p>
+          </div>
+          <div class="bg-orange-500 text-white p-4 rounded-xl text-center">
+            <p class="text-2xl font-bold">6</p>
+            <p class="text-sm">Hết hạn</p>
+          </div>
+        </div>
+
+        <!-- Search + Filter -->
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-6">
+          <input type="text" placeholder="Search by ID"
+                 class="w-full border rounded-lg px-3 py-2 text-sm"/>
+          <button>Search</button>
+        </div>
+
+        <!-- Task List -->
+        <div class="bg-white shadow-md rounded-xl overflow-hidden">
+          <table class="w-full text-left border-collapse">
+            <thead class="bg-gray-100 text-sm">
+              <tr>
+                <th class="p-3">ID</th>
+                <th class="p-3">Name</th>
+                <th class="p-3">Phone</th>
+                <th class="p-3">Email</th>
+                <th class="p-3">Deadline</th>
+                <th class="p-3">Created By</th>
+                <th class="p-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="text-sm">
+              <tr class="border-t">
+                <td class="p-3">0123456789</td>
+                <td class="p-3 font-semibold">Nguyễn Văn An</td>
+                <td class="p-3">0123456789</td>
+                <td class="p-3">kipstencommunity@gmail.com</td>
+                <td class="p-3 text-red-500">2025-02-15</td>
+                <td class="p-3 text-gray-500">Admin Hùng</td>
+                <td class="p-3 text-right space-x-2">
+                  <button class="text-blue-500"><i class="fas fa-edit"></i></button>
+                  <button class="text-red-500"><i class="fas fa-trash"></i></button>
+                </td>
+              </tr>
+              <tr class="border-t">
+                <td class="p-3">0987654321</td>
+                <td class="p-3 font-semibold">Trần Thị Bình</td>
+                <td class="p-3">0987654321</td>
+                <td class="p-3">astosteniete@gmail.com</td>
+                <td class="p-3 text-red-500">2025-01-20</td>
+                <td class="p-3 text-gray-500">Admin Linh</td>
+                <td class="p-3 text-right space-x-2">
+                  <button class="text-blue-500"><i class="fas fa-edit"></i></button>
+                  <button class="text-red-500"><i class="fas fa-trash"></i></button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const { createApp } = Vue
+    createApp({}).mount('#app')
+  </script>
+</body>
+</html>
