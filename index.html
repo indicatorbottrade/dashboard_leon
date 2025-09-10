@@ -1,116 +1,460 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Task Dashboard</title>
-  <!-- Tailwind -->
+   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="">
+  <link rel="shortcut icon" href="image/logo.PNG">
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dashboard EA Leon</title>
+    <meta name="description"
+    content="Trang Database quản lý các tài khoản đăng ký sử dụng EA Auto trade nhà Leon Trades." />
+
+
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Vue 3 -->
-  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-  <!-- FontAwesome -->
-  <script src="https://kit.fontawesome.com/a2e0e9f6d5.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
 </head>
-<body class="bg-gray-50">
-  <div id="app">
-    <div class="flex min-h-screen">
-      <!-- Sidebar -->
-      <aside class="hidden md:flex flex-col w-64 bg-white shadow-lg p-4">
-        <h2 class="text-xl font-bold mb-6">Dashboard</h2>
-        <nav class="space-y-3">
-          <a href="#" class="block text-gray-700 hover:text-blue-500">Leon_CG_v2</a>
-          <!-- <a href="#" class="block text-gray-700 hover:text-blue-500">Employees</a> -->
-          <!-- <a href="#" class="block text-gray-700 hover:text-blue-500">Tasks</a> -->
-          <a href="#" class="block text-gray-700 hover:text-blue-500">Settings</a>
+
+<body class="bg-gray-100">
+  <div id="app" class="min-h-screen relative">
+    <!-- LOADING OVERLAY -->
+    <div v-if="loading" class="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-40">
+      <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+
+    <!-- TOAST -->
+    <div v-if="toastMessage" :class="['fixed top-4 right-4 px-4 py-2 rounded shadow text-white z-[200]',
+      toastType==='success'?'bg-green-600':'bg-red-600']">
+      {{ toastMessage }}
+    </div>
+
+    <!-- LOGIN -->
+    <div v-if="!isLoggedIn" class="flex items-center justify-center h-screen px-4">
+      <div class="bg-white p-8 rounded-xl shadow-md w-full max-w-sm">
+        <h2 class="text-2xl font-bold mb-4 text-center">Đăng nhập</h2>
+        <input v-model="loginForm.username" type="text" placeholder="Tên đăng nhập"
+          class="w-full p-2 border rounded mb-3" />
+        <input v-model="loginForm.password" type="password" placeholder="Mật khẩu"
+          class="w-full p-2 border rounded mb-3" />
+        <button @click="login" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Đăng nhập</button>
+        <p v-if="errorMessage" class="text-red-500 text-sm mt-3 text-center">{{ errorMessage }}</p>
+      </div>
+    </div>
+
+    <!-- APP -->
+    <div v-else class="flex flex-col md:flex-row h-screen">
+      <!-- Sidebar desktop -->
+      <aside class="hidden md:flex md:flex-col w-64 bg-white border-r p-4">
+        <h2 class="text-xl font-bold mb-6">Dashboard EA Leon</h2>
+        <nav class="flex-1">
+          <ul class="space-y-2">
+            <li v-for="p in projects" :key="p.key">
+              <button @click="selectProject(p.key)"
+                :class="['w-full text-left py-2 px-2 rounded transition', selectedProjectKey===p.key ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50']">
+                {{ p.title }}
+              </button>
+            </li>
+            <!-- <li class="mt-3">
+              <button @click="openSettings"
+                class="w-full text-left py-2 px-2 rounded hover:bg-gray-50">Settings</button>
+            </li> -->
+          </ul>
         </nav>
+        <div class="mt-4">
+          <button @click="logout" class="w-full bg-red-500 text-white py-2 rounded hover:bg-red-600">Đăng xuất</button>
+        </div>
       </aside>
 
-      <!-- Main -->
-      <main class="flex-1 p-4 md:p-6">
-        <!-- Header (mobile only) -->
-        <div class="flex items-center md:hidden mb-4">
-          <button class="p-2 rounded-lg bg-gray-100 mr-2">
-            <i class="fas fa-bars"></i>
+      <!-- Header mobile -->
+      <header class="md:hidden bg-white border-b p-3 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <!-- Icon menu -->
+          <button @click="mobileMenuOpen = !mobileMenuOpen" class="p-2 rounded hover:bg-gray-100">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
           </button>
-          <h1 class="text-lg font-bold">Task Management</h1>
+          <span class="font-bold text-lg">Dashboard</span>
+        </div>
+        <button @click="logout" class="text-red-500">Đăng xuất</button>
+      </header>
+
+      <!-- Menu mobile -->
+      <div v-if="mobileMenuOpen" class="md:hidden bg-white border-b px-3 py-2">
+        <ul class="space-y-1">
+          <li v-for="p in projects" :key="p.key">
+            <button @click="selectProject(p.key);mobileMenuOpen=false"
+              :class="['w-full text-left px-2 py-1 rounded', selectedProjectKey===p.key ? 'bg-gray-200 font-semibold' : 'hover:bg-gray-100']">
+              {{ p.title }}
+            </button>
+          </li>
+          <li>
+            <button @click="openSettings; mobileMenuOpen=false"
+              class="w-full text-left px-2 py-1 rounded hover:bg-gray-100">Settings</button>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Main -->
+      <main class="flex-1 p-6 overflow-auto">
+        <h1 class="text-2xl font-bold mb-2">{{ currentProject.title }}</h1>
+        <p class="text-gray-500 mb-4">{{ currentProject.desc }}</p>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-3 gap-3 mb-4">
+          <div class="bg-white rounded-lg p-4 text-center shadow">
+            <p class="text-xl font-bold">{{ stats.total }}</p>
+            <p class="text-gray-500 text-sm">Tổng</p>
+          </div>
+          <div class="bg-white rounded-lg p-4 text-center shadow">
+            <p class="text-xl font-bold text-green-600">{{ stats.active }}</p>
+            <p class="text-gray-500 text-sm">Còn hạn</p>
+          </div>
+          <div class="bg-white rounded-lg p-4 text-center shadow">
+            <p class="text-xl font-bold text-red-600">{{ stats.expired }}</p>
+            <p class="text-gray-500 text-sm">Hết hạn</p>
+          </div>
         </div>
 
-        <!-- Title -->
-        <h2 class="text-2xl font-bold mb-2">Leon_CG_v2</h2>
-        <p class="text-gray-500 mb-6">EA trade các cập tiền(Chiến lược Asian Kill Zone).</p>
-
-        <!-- Cards -->
-        <div class="grid grid-cols-3 md:grid-cols-5 gap-4 mb-6">
-          <div class="bg-blue-500 text-white p-4 rounded-xl text-center">
-            <p class="text-2xl font-bold">11</p>
-            <p class="text-sm">Tổng</p>
-          </div>
-          <div class="bg-green-500 text-white p-4 rounded-xl text-center">
-            <p class="text-2xl font-bold">5</p>
-            <p class="text-sm">Còn hạn</p>
-          </div>
-          <div class="bg-orange-500 text-white p-4 rounded-xl text-center">
-            <p class="text-2xl font-bold">6</p>
-            <p class="text-sm">Hết hạn</p>
+        <!-- Search & Create -->
+        <div class="bg-white p-4 rounded-lg mb-4">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <input v-model="searchId" type="text" placeholder="Search by ID" class="border rounded px-3 py-2 w-full" />
+            <input v-model="searchPhone" type="text" placeholder="Search by SĐT"
+              class="border rounded px-3 py-2 w-full" />
+            <div class="flex">
+              <button @click="openCreate" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 w-full">+
+                Tạo Acc</button>
+            </div>
           </div>
         </div>
 
-        <!-- Search + Filter -->
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-6">
-          <input type="text" placeholder="Search by ID"
-                 class="w-full border rounded-lg px-3 py-2 text-sm"/>
-          <button>Search</button>
-        </div>
-
-        <!-- Task List -->
-        <div class="bg-white shadow-md rounded-xl overflow-hidden">
-          <table class="w-full text-left border-collapse">
-            <thead class="bg-gray-100 text-sm">
+        <!-- Table desktop -->
+        <div class="hidden md:block bg-white rounded-lg shadow overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="bg-gray-100">
               <tr>
-                <th class="p-3">ID</th>
-                <th class="p-3">Name</th>
-                <th class="p-3">Phone</th>
-                <th class="p-3">Email</th>
-                <th class="p-3">Deadline</th>
-                <th class="p-3">Created By</th>
-                <th class="p-3 text-right">Actions</th>
+                <th class="py-3 px-4 text-left">Time</th>
+                <th class="py-3 px-4 text-left">ID</th>
+                <th class="py-3 px-4 text-left">Name</th>
+                <th class="py-3 px-4 text-left">Phone</th>
+                <th class="py-3 px-4 text-left">Email</th>
+                <th class="py-3 px-4 text-left">Deadline</th>
+                <th class="py-3 px-4 text-left">Created By</th>
+                <th class="py-3 px-4 text-left">Actions</th>
               </tr>
             </thead>
-            <tbody class="text-sm">
-              <tr class="border-t">
-                <td class="p-3">0123456789</td>
-                <td class="p-3 font-semibold">Nguyễn Văn An</td>
-                <td class="p-3">0123456789</td>
-                <td class="p-3">kipstencommunity@gmail.com</td>
-                <td class="p-3 text-red-500">2025-02-15</td>
-                <td class="p-3 text-gray-500">Admin Hùng</td>
-                <td class="p-3 text-right space-x-2">
-                  <button class="text-blue-500"><i class="fas fa-edit"></i></button>
-                  <button class="text-red-500"><i class="fas fa-trash"></i></button>
-                </td>
-              </tr>
-              <tr class="border-t">
-                <td class="p-3">0987654321</td>
-                <td class="p-3 font-semibold">Trần Thị Bình</td>
-                <td class="p-3">0987654321</td>
-                <td class="p-3">astosteniete@gmail.com</td>
-                <td class="p-3 text-red-500">2025-01-20</td>
-                <td class="p-3 text-gray-500">Admin Linh</td>
-                <td class="p-3 text-right space-x-2">
-                  <button class="text-blue-500"><i class="fas fa-edit"></i></button>
-                  <button class="text-red-500"><i class="fas fa-trash"></i></button>
+            <tbody>
+              <tr v-for="u in filteredUsers" :key="u.id+u.time" class="border-t">
+                <td class="py-2 px-4">{{ u.time }}</td>
+                <td class="py-2 px-4">{{ u.id }}</td>
+                <td class="py-2 px-4">{{ u.name }}</td>
+                <td class="py-2 px-4">{{ u.phone }}</td>
+                <td class="py-2 px-4">{{ u.email }}</td>
+                <td class="py-2 px-4" :class="{'text-red-500': isExpired(u.deadline)}">{{ u.deadline }}</td>
+                <td class="py-2 px-4">{{ u.createdBy }}</td>
+                <td class="py-2 px-4">
+                  <button @click="editUser(u)" class="text-blue-600 hover:underline">Edit</button>
+                  <button @click="confirmDelete(u)" class="text-red-600 hover:underline ml-2">Delete</button>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
+
+        <!-- Cards mobile -->
+        <div class="md:hidden space-y-3">
+          <div v-for="u in filteredUsers" :key="u.id+u.time" class="bg-white rounded-lg shadow p-4">
+            <p><span class="font-semibold">ID:</span> {{ u.id }}</p>
+            <p><span class="font-semibold">Name:</span> {{ u.name }}</p>
+            <p><span class="font-semibold">Phone:</span> {{ u.phone }}</p>
+            <p><span class="font-semibold">Email:</span> {{ u.email }}</p>
+            <p><span class="font-semibold">Deadline:</span>
+              <span :class="{'text-red-500': isExpired(u.deadline)}">{{ u.deadline }}</span>
+            </p>
+            <p><span class="font-semibold">Created By:</span> {{ u.createdBy }}</p>
+            <div class="mt-2">
+              <button @click="editUser(u)" class="text-blue-600 hover:underline">Edit</button>
+              <button @click="confirmDelete(u)" class="text-red-600 hover:underline ml-2">Delete</button>
+            </div>
+          </div>
+        </div>
       </main>
+    </div>
+
+    <!-- Modal Create/Edit -->
+    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center">
+      <div class="absolute inset-0 bg-black opacity-40" @click="closeModal"></div>
+      <div class="bg-white rounded-lg p-6 w-full max-w-md z-10">
+        <h3 class="text-lg font-bold mb-4">{{ editIndex===null?'Tạo account mới':'Chỉnh sửa account' }}</h3>
+        <div class="space-y-3">
+          <label class="block text-sm font-medium">ID <span class="text-red-500">*</span></label>
+          <input v-model="form.id" type="text" placeholder="ID" :disabled="editIndex!==null"
+            class="w-full border rounded px-3 py-2" />
+          <label class="block text-sm font-medium">Name <span class="text-red-500">*</span></label>
+          <input v-model="form.name" type="text" placeholder="Name" class="w-full border rounded px-3 py-2" />
+          <label class="block text-sm font-medium">Phone <span class="text-red-500">*</span></label>
+          <input v-model="form.phone" type="text" placeholder="Phone" class="w-full border rounded px-3 py-2" />
+          <label class="block text-sm font-medium">Email</label>
+          <input v-model="form.email" type="text" placeholder="Email" class="w-full border rounded px-3 py-2" />
+          <label class="block text-sm font-medium">Deadline <span class="text-red-500">*</span></label>
+          <input v-model="form.deadline" type="date" class="w-full border rounded px-3 py-2" />
+          <p v-if="formError" class="text-red-500 text-sm">{{ formError }}</p>
+        </div>
+        <div class="flex justify-end gap-2 mt-4">
+          <button @click="closeModal" class="px-4 py-2 bg-gray-200 rounded">Hủy</button>
+          <button @click="saveUser" class="px-4 py-2 bg-blue-600 text-white rounded">Lưu</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div v-if="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center">
+      <div class="absolute inset-0 bg-black opacity-40" @click="showDeleteModal=false"></div>
+      <div class="bg-white rounded-lg p-6 w-full max-w-sm z-10 text-center">
+        <h3 class="text-lg font-bold mb-4">Xác nhận xóa</h3>
+        <p>Bạn có chắc muốn xóa account <span class="font-semibold">{{ userToDelete?.name }}</span>?</p>
+        <div class="flex justify-center gap-3 mt-4">
+          <button @click="showDeleteModal=false" class="px-4 py-2 bg-gray-200 rounded">Hủy</button>
+          <button @click="deleteUser" class="px-4 py-2 bg-red-600 text-white rounded">Xóa</button>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
     const { createApp } = Vue
-    createApp({}).mount('#app')
+    createApp({
+      data() {
+        return {
+          isLoggedIn: false,
+          loginForm: { username: '', password: '' },
+          errorMessage: '',
+          currentUserName: '',
+          projects: [
+            {
+              key: 'Leon_CG_v2',
+              title: 'Leon_CG_v2',
+              desc: 'EA Forex project.',
+              accounts: [
+
+              ]
+            },
+            {
+              key: 'Leo_Xau_CG_v1',
+              title: 'Leo_Xau_CG_v1',
+              desc: 'EA Gold project.',
+              accounts: []
+            }
+          ],
+          selectedProjectKey: 'Leon_CG_v2',
+          searchId: '', searchPhone: '',
+          showModal: false, editIndex: null,
+          form: { id: '', name: '', phone: '', email: '', deadline: '' },
+          formError: '',
+          mobileMenuOpen: false,
+          showDeleteModal: false,
+          userToDelete: null,
+          loading: false,
+          toastMessage: '',
+          toastType: 'success',
+          apiUrl: "https://script.google.com/macros/s/AKfycbylOBN-ghjtqeIovN1Bi5j-DcAm8_KZOGl3sjlyCYUvRVl3trVtGQPSoAI2d_vvJD6n/exec"
+        }
+      },
+      async mounted() {
+        try {
+          // this.loading = true
+          let res = await fetch(this.apiUrl, {
+            method: "POST",
+            body: JSON.stringify({ action: "sidebar" })
+          })
+          const data = await res.json();
+          this.projects = data
+
+        } catch (err) {
+          console.error("Lỗi load dữ liệu:", err);
+        } finally {
+          // this.loading = false
+        }
+
+      },
+      computed: {
+        currentProject() { return this.projects.find(p => p.key === this.selectedProjectKey) },
+        filteredUsers() {
+          const id = this.searchId.toLowerCase(), ph = this.searchPhone.toLowerCase()
+          return this.currentProject.accounts.filter(u => {
+            if (id && !u.id.toLowerCase().includes(id)) return false
+            if (ph && !u.phone.toLowerCase().includes(ph)) return false
+            return true
+          })
+        },
+        stats() {
+          let total = this.currentProject.accounts.length
+          let active = this.currentProject.accounts.filter(u => !this.isExpired(u.deadline)).length
+          let expired = total - active
+          return { total, active, expired }
+        }
+      },
+      methods: {
+        showToast(msg, type = 'success') {
+          this.toastMessage = msg
+          this.toastType = type
+          setTimeout(() => { this.toastMessage = '' }, 3000)
+        },
+        async login() {
+          try {
+            this.loading = true
+            let res = await fetch(this.apiUrl, {
+              method: "POST",
+              body: JSON.stringify({ action: "login", username: this.loginForm.username, password: this.loginForm.password })
+            })
+            let data = await res.json()
+            if (data.success) {
+              this.isLoggedIn = true
+              this.currentUserName = this.loginForm.username
+              // this.loadData()
+            } else {
+              this.errorMessage = "Sai tên đăng nhập hoặc mật khẩu"
+            }
+          } catch {
+            // this.showToast("Lỗi khi xóa!", "error")
+          } finally {
+            this.loading = false
+
+          }
+          // if(this.loginForm.username==='admin' && this.loginForm.password==='123456'){
+          //   this.isLoggedIn=true
+          //   this.currentUserName=this.loginForm.username
+          // }else this.errorMessage='Sai tài khoản hoặc mật khẩu'
+        },
+        async loadData() {
+          let res = await fetch(this.apiUrl, {
+            method: "POST",
+            body: JSON.stringify({ action: "list", project: this.selectedProjectKey })
+          })
+          let data = await res.json()
+          const project = this.projects.key.find(p => p.key === this.selectedProjectKey)
+          if (project) {
+            project.accounts = await res.json()
+            this.selectProject(this.selectedProjectKey)
+          }
+        },
+        logout() { this.isLoggedIn = false; this.loginForm = { username: '', password: '' }; },
+        selectProject(k) { this.selectedProjectKey = k },
+        openSettings() { alert('Settings') },
+        openCreate() {
+          this.form = { id: '', name: '', phone: '', email: '', deadline: '' };
+          this.editIndex = null; this.showModal = true; this.formError = ''
+
+        },
+        editUser(u) {
+          this.form = { ...u };
+          this.editIndex = this.currentProject.accounts.findIndex(x => x.id === u.id);
+          this.showModal = true;
+        },
+        confirmDelete(u) {
+          this.userToDelete = u;
+          this.showDeleteModal = true
+          
+        },
+        async deleteUser() {
+          try {
+            this.loading = true
+            let res = await fetch(this.apiUrl, {
+              method: "POST",
+              body: JSON.stringify({ action: "delete", id: this.userToDelete.id, project: this.selectedProjectKey })
+            })
+            let data = await res.json()
+            if (data.success) {
+              this.showToast("Xóa thành công!", "success")
+              this.currentProject.accounts = this.currentProject.accounts.filter(x => x.id !== this.userToDelete.id)
+              this.showDeleteModal = false
+            } else {
+              this.showToast("Xóa thất bại!", "error")
+            }
+          } catch {
+            this.showToast("Lỗi khi xóa!", "error")
+          } finally {
+            this.loading = false
+
+          }
+        },
+        async saveUser() {
+          if (!this.form.id || !this.form.name || !this.form.phone || !this.form.deadline) {
+            this.formError = 'Không được để trống ID, Name, Phone, Deadline'; return;
+          }
+          if (this.editIndex === null) {
+            try {
+              this.loading = true
+              let res = await fetch(this.apiUrl, {
+                method: "POST",
+                body: JSON.stringify({
+                  action: "create",
+                  project: this.selectedProjectKey,
+                  id: this.form.id,
+                  name: this.form.name,
+                  phone: this.form.phone,
+                  email: this.form.email,
+                  deadline: this.form.deadline,
+                  createdBy: this.currentUserName
+
+                })
+              })
+              const data = await res.json();
+              if (data.success) {
+                this.showToast("Đã tạo Accounts mới thành công!", "success")
+                this.currentProject.accounts.push({ ...this.form, time: new Date().toLocaleString(), createdBy: this.currentUserName })
+              } else {
+                this.showToast("Đã tạo Accounts  "+this.form.name+"  thất bại!", "error")
+              }
+            } catch {
+              this.showToast("Lỗi khi tạo Accounts  "+this.form.name+" !", "error")
+              // console.log(data)
+            } finally {
+              this.loading = false
+
+            }
+          } else {
+            try {
+              this.loading = true
+              let res = await fetch(this.apiUrl, {
+                method: "POST",
+                body: JSON.stringify({
+                  action: "update",
+                  project: this.selectedProjectKey,
+                  id: this.form.id,
+                  name: this.form.name,
+                  phone: this.form.phone,
+                  email: this.form.email,
+                  deadline: this.form.deadline,
+                  createdBy: this.currentUserName
+                  
+                })
+              })
+              const data = await res.json();
+              if (data.success) {
+                this.showToast("Cập nhật Accounts thành công!", "success")
+                this.currentProject.accounts[this.editIndex] = { ...this.form, createdBy: this.currentProject.accounts[this.editIndex].createdBy, time: this.currentProject.accounts[this.editIndex].time }
+              } else {
+                this.showToast("Cập nhật Account "+this.form.name+" thất bại!", "error")
+              }
+            } catch {
+              this.showToast("Lỗi khi Cập nhật Accounts  "+this.form.name+" !", "error")
+              console.log(data)
+            } finally {
+              this.loading = false
+
+            }
+          }
+          this.showModal = false
+        },
+        closeModal() { this.showModal = false },
+        isExpired(d) { return new Date(d) < new Date() }
+      }
+    }).mount('#app')
   </script>
 </body>
+
 </html>
