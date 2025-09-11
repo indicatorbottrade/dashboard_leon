@@ -55,10 +55,11 @@
                 {{ p.title }}
               </button>
             </li>
-            <!-- <li class="mt-3">
+            <hr>
+            <li class="mt-3">
               <button @click="openSettings"
-                class="w-full text-left py-2 px-2 rounded hover:bg-gray-50">Settings</button>
-            </li> -->
+                class="w-full text-blue-500 text-left py-2 px-2 rounded hover:bg-gray-50">Reload Data</button>
+            </li>
           </ul>
         </nav>
         <div class="mt-4">
@@ -76,7 +77,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <span class="font-bold text-lg">Dashboard</span>
+          <span class="font-bold text-lg">Dashboard EA Leon</span>
         </div>
         <button @click="logout" class="text-red-500">Đăng xuất</button>
       </header>
@@ -90,9 +91,10 @@
               {{ p.title }}
             </button>
           </li>
+          <hr>
           <li>
             <button @click="openSettings; mobileMenuOpen=false"
-              class="w-full text-left px-2 py-1 rounded hover:bg-gray-100">Settings</button>
+              class="w-full text-blue-500 text-left px-2 py-1 rounded hover:bg-gray-100">Reload Data</button>
           </li>
         </ul>
       </div>
@@ -196,7 +198,7 @@
           <label class="block text-sm font-medium">Name <span class="text-red-500">*</span></label>
           <input v-model="form.name" type="text" placeholder="Name" class="w-full border rounded px-3 py-2" />
           <label class="block text-sm font-medium">Phone <span class="text-red-500">*</span></label>
-          <input v-model="form.phone" type="text" placeholder="Phone" class="w-full border rounded px-3 py-2" />
+          <input v-model="form.phone" type="text"  placeholder="Phone" class="w-full border rounded px-3 py-2" />
           <label class="block text-sm font-medium">Email</label>
           <input v-model="form.email" type="text" placeholder="Email" class="w-full border rounded px-3 py-2" />
           <label class="block text-sm font-medium">Deadline <span class="text-red-500">*</span></label>
@@ -233,26 +235,11 @@
           loginForm: { username: '', password: '' },
           errorMessage: '',
           currentUserName: '',
-          projects: [
-            {
-              key: 'Leon_CG_v2',
-              title: 'Leon_CG_v2',
-              desc: 'EA Forex project.',
-              accounts: [
-
-              ]
-            },
-            {
-              key: 'Leo_Xau_CG_v1',
-              title: 'Leo_Xau_CG_v1',
-              desc: 'EA Gold project.',
-              accounts: []
-            }
-          ],
-          selectedProjectKey: 'Leon_CG_v2',
+          projects: [],
+          selectedProjectKey: 'LeonCGv2',
           searchId: '', searchPhone: '',
           showModal: false, editIndex: null,
-          form: { id: '', name: '', phone: '', email: '', deadline: '' },
+          form: { id: '', name: '', phone: '+84', email: '', deadline: '' },
           formError: '',
           mobileMenuOpen: false,
           showDeleteModal: false,
@@ -260,7 +247,7 @@
           loading: false,
           toastMessage: '',
           toastType: 'success',
-          apiUrl: "https://script.google.com/macros/s/AKfycbylOBN-ghjtqeIovN1Bi5j-DcAm8_KZOGl3sjlyCYUvRVl3trVtGQPSoAI2d_vvJD6n/exec"
+          apiUrl: "https://script.google.com/macros/s/AKfycbze8miLwv6ou6ZDycykYZV-OhauTmrt8DTp-Bi2W5kQIZfSBcaWEIJAeBtmRoHOcjcOuQ/exec"
         }
       },
       async mounted() {
@@ -343,7 +330,23 @@
         },
         logout() { this.isLoggedIn = false; this.loginForm = { username: '', password: '' }; },
         selectProject(k) { this.selectedProjectKey = k },
-        openSettings() { alert('Settings') },
+        async openSettings() { 
+          try {
+          this.loading = true
+          let res = await fetch(this.apiUrl, {
+            method: "POST",
+            body: JSON.stringify({ action: "sidebar" })
+          })
+          const data = await res.json();
+          this.projects = data
+
+        } catch (err) {
+          console.error("Lỗi load dữ liệu:", err);
+        } finally {
+          this.loading = false
+        }
+
+         },
         openCreate() {
           this.form = { id: '', name: '', phone: '', email: '', deadline: '' };
           this.editIndex = null; this.showModal = true; this.formError = ''
@@ -364,18 +367,23 @@
             this.loading = true
             let res = await fetch(this.apiUrl, {
               method: "POST",
-              body: JSON.stringify({ action: "delete", id: this.userToDelete.id, project: this.selectedProjectKey })
+              body: JSON.stringify({ action: "delete", id: this.userToDelete.id, project: this.selectedProjectKey, createdBy: this.currentUserName })
             })
             let data = await res.json()
             if (data.success) {
               this.showToast("Xóa thành công!", "success")
+
               this.currentProject.accounts = this.currentProject.accounts.filter(x => x.id !== this.userToDelete.id)
               this.showDeleteModal = false
             } else {
               this.showToast("Xóa thất bại!", "error")
+              // console.log(this.userToDelete.id)
+              // console.log(this.selectedProjectKey)
+              // console.log(data)
             }
           } catch {
             this.showToast("Lỗi khi xóa!", "error")
+            // console.log(data)
           } finally {
             this.loading = false
 
@@ -408,9 +416,12 @@
                 this.currentProject.accounts.push({ ...this.form, time: new Date().toLocaleString(), createdBy: this.currentUserName })
               } else {
                 this.showToast("Đã tạo Accounts  "+this.form.name+"  thất bại!", "error")
+                // console.log(this.selectedProjectKey)
+                //  console.log(data)
               }
             } catch {
               this.showToast("Lỗi khi tạo Accounts  "+this.form.name+" !", "error")
+              // console.log(this.selectedProjectKey)
               // console.log(data)
             } finally {
               this.loading = false
@@ -439,10 +450,13 @@
                 this.currentProject.accounts[this.editIndex] = { ...this.form, createdBy: this.currentProject.accounts[this.editIndex].createdBy, time: this.currentProject.accounts[this.editIndex].time }
               } else {
                 this.showToast("Cập nhật Account "+this.form.name+" thất bại!", "error")
+                // console.log(this.selectedProjectKey)
+                // console.log(this.form.id)
+                // console.log(data)
               }
             } catch {
               this.showToast("Lỗi khi Cập nhật Accounts  "+this.form.name+" !", "error")
-              console.log(data)
+              // console.log(data)
             } finally {
               this.loading = false
 
