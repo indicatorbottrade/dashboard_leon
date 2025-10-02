@@ -247,7 +247,8 @@
           loading: false,
           toastMessage: '',
           toastType: 'success',
-          apiUrl: "https://script.google.com/macros/s/AKfycbz-sCT3FNm0c_TjaDcLLKPEojXFUuZTK8xT7hER62f0HkigsObX_XjkSn8IHDTz_jZPqA/exec"
+          apiUrl: "https://script.google.com/macros/s/AKfycbyc1PmX0i5s23Zg0RaIVz-dUnDYGZFVbSDv8cWql4QiuROGD0EaYKpBcOSAI4X05t6Iuw/exec"
+          // apiUrl: "https://script.google.com/macros/s/AKfycbz-sCT3FNm0c_TjaDcLLKPEojXFUuZTK8xT7hER62f0HkigsObX_XjkSn8IHDTz_jZPqA/exec"
         }
       },
       async mounted() {
@@ -270,11 +271,15 @@
       computed: {
         currentProject() { return this.projects.find(p => p.key === this.selectedProjectKey) },
         filteredUsers() {
-          const id = this.searchId.toLowerCase(), ph = this.searchPhone.toLowerCase()
-          return this.currentProject.accounts.filter(u => {
-            if (id && !u.id.toLowerCase().includes(id)) return false
-            if (ph && !u.phone.toLowerCase().includes(ph)) return false
-            return true
+         const id = this.searchId.toLowerCase(), ph = this.searchPhone.toLowerCase()
+        return this.currentProject.accounts.filter(u => {
+          // Đảm bảo u.id là chuỗi
+          const idStr = typeof u.id === 'string' ? u.id : String(u.id || '');
+          if (id && !idStr.toLowerCase().includes(id)) return false
+          // Đảm bảo u.phone là chuỗi
+          const phoneStr = typeof u.phone === 'string' ? u.phone : String(u.phone || '');
+          if (ph && !phoneStr.toLowerCase().includes(ph)) return false
+          return true
           })
         },
         stats() {
